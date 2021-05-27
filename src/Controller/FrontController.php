@@ -22,7 +22,9 @@ class FrontController extends AbstractController
     {
         $responseFromClient = $client->fetchDataFromClient($request->get('city'));
         $selectedCityForecast = json_decode($responseFromClient, true);
-        $productType->selectProductType($selectedCityForecast['forecastTimestamps']);
+        $selectedProductTypes = $productType->selectProductType($selectedCityForecast['forecastTimestamps']);
+
+        dump($selectedProductTypes);
 
         return $this->json($selectedCityForecast['forecastTimestamps']);
     }

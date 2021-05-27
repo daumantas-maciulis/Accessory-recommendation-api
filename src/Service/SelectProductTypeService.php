@@ -24,9 +24,8 @@ class SelectProductTypeService
         $tomorrowsDate = new \DateTime('tomorrow');
         $dayAfterDate = new \DateTime('tomorrow');
         $dayAfterDate->add(new \DateInterval('P1D'));
-
-        $todaysWeather = [];
-        $tomorrowsWeather = [];
+        $thirdDay = new \DateTime('tomorrow');
+        $thirdDay->add(new \DateInterval('P2D'));
 
         $weatherForecast = (object)$weatherForecast;
         foreach ($weatherForecast as $weatherForestHourly) {
@@ -39,9 +38,13 @@ class SelectProductTypeService
             if ($weatherForecastDate > $tomorrowsDate && $weatherForecastDate < $dayAfterDate) {
                 $tomorrowsWeatherConditions[] = $weatherForestHourly->conditionCode;
             }
+            if ($weatherForecastDate > $dayAfterDate && $weatherForecastDate < $thirdDay) {
+                $dayAfterTomorrowWeather[] = $weatherForestHourly->conditionCode;
+            }
         }
         $accessoryGroup['today'] = $this->selectAccessoryType($todaysWeatherConditions);
         $accessoryGroup['tomorrow'] = $this->selectAccessoryType($tomorrowsWeatherConditions);
+        $accessoryGroup['dayAfter'] = $this->selectAccessoryType($dayAfterTomorrowWeather);
 
         return $accessoryGroup;
     }
