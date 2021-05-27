@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-class SelectProductTypeService
+class SelectProductCategoryService
 {
     private const HEAVY_SNOW = "heavy-snow";
     private const LIGHT_SNOW = "light-snow";
@@ -21,6 +21,7 @@ class SelectProductTypeService
 
     public function selectProductType(array $weatherForecast)
     {
+        $todaysDate = new \DateTime('today');
         $tomorrowsDate = new \DateTime('tomorrow');
         $dayAfterDate = new \DateTime('tomorrow');
         $dayAfterDate->add(new \DateInterval('P1D'));
@@ -42,9 +43,18 @@ class SelectProductTypeService
                 $dayAfterTomorrowWeather[] = $weatherForestHourly->conditionCode;
             }
         }
-        $accessoryGroup['today'] = $this->selectAccessoryType($todaysWeatherConditions);
-        $accessoryGroup['tomorrow'] = $this->selectAccessoryType($tomorrowsWeatherConditions);
-        $accessoryGroup['dayAfter'] = $this->selectAccessoryType($dayAfterTomorrowWeather);
+        $accessoryGroup['today'] = [
+            'date' => $todaysDate->format('Y-m-d'),
+            'weatherForecast' => $this->selectAccessoryType($todaysWeatherConditions)
+        ];
+        $accessoryGroup['tomorrow'] = [
+            'date' => $tomorrowsDate->format('Y-m-d'),
+            'weatherForecast' => $this->selectAccessoryType($tomorrowsWeatherConditions)
+        ];
+        $accessoryGroup['dayAfter'] = [
+            'date' => $dayAfterDate->format('Y-m-d'),
+            'weatherForecast' => $this->selectAccessoryType($dayAfterTomorrowWeather)
+        ];
 
         return $accessoryGroup;
     }
@@ -72,6 +82,6 @@ class SelectProductTypeService
         if (in_array(self::FOG, $weatherOfTheDay)) {
             return "fog";
         }
-
     }
+
 }

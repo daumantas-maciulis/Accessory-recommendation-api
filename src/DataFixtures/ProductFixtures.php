@@ -12,13 +12,13 @@ class ProductFixtures extends Fixture
 {
     public function load(ObjectManager $manager)
     {
-        foreach ($this->getProducts() as [$sku, $name, $price, $productGroup]) {
+        foreach ($this->getProducts() as [$sku, $name, $price, $productCategory]) {
             $product = new Product();
 
             $product->setSku($sku);
             $product->setName($name);
             $product->setPrice($price);
-            $product->setProductGroup($productGroup);
+            $product->setProductCategory($productCategory);
 
             $manager->persist($product);
         }
