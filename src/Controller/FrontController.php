@@ -12,6 +12,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 /**
  * @Route("/api/v1/products/recommended")
@@ -21,30 +23,36 @@ class FrontController extends AbstractController
     /**
      * @Route("/{city}", methods="GET")
      */
-    public function getRecommendedProductsAction(Request $request, Client $client, SelectProductCategoryService $productCategoryService, ProductModel $productModel): JsonResponse
+    public function getRecommendedProductsAction($city, Client $client, SelectProductCategoryService $productCategoryService, ProductModel $productModel, CacheInterface $accessoryRecomendationCache): JsonResponse
     {
-        $responseFromClient = $client->fetchDataFromClient($request->get('city'));
-        $selectedCityForecast = json_decode($responseFromClient, true);
-        $selectedProductTypes = $productCategoryService->selectProductType($selectedCityForecast['forecastTimestamps']);
-        $responseDataArray = [];
-        foreach ($selectedProductTypes as $productType) {
-            $selectedProducts = $productModel->findProductsByCategory($productType['weatherForecast']);
-            $data = [
-                'Weather_forecast' => $productType['weatherForecast'],
-                'date' => $productType['date'],
-                'products' => $selectedProducts
+        $response = $accessoryRecomendationCache->get($city, function (ItemInterface $item) use ($city, $client, $productCategoryService, $productModel) {
+            $item->expiresAfter(500);
+            $responseFromClient = $client->fetchDataFromClient($city);
+            $selectedCityForecast = json_decode($responseFromClient, true);
+            $selectedProductTypes = $productCategoryService->selectProductType($selectedCityForecast['forecastTimestamps']);
+            $responseDataArray = [];
+            foreach ($selectedProductTypes as $productType) {
+                $selectedProducts = $productModel->findProductsByCategory($productType['weatherForecast']);
+                $data = [
+                    'Weather_forecast' => $productType['weatherForecast'],
+                    'date' => $productType['date'],
+                    'products' => $selectedProducts
+                ];
+                array_push($responseDataArray, $data);
+            }
+
+            $response = [
+                'city' => ucfirst($city),
+                'recommendations' => $responseDataArray,
+                'additional information' => 'Weather for this information was taken from LHMT API. For more information: https://api.meteo.lt/'
             ];
-            array_push($responseDataArray, $data);
-        }
-
-        $response = [
-            'city' => $request->get('city'),
-            'recommendations' => $responseDataArray
-        ];
-
+            dump("not cached");
+            return $response;
+        });
 
         return $this->json($response, Response::HTTP_OK, [], [
             ObjectNormalizer::IGNORED_ATTRIBUTES => ['id', 'productCategory']
         ]);
     }
 }
+
