@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Client\LHMT\Client;
+use App\Entity\Product;
+use App\Exception\ExternalApiException;
 use App\Model\ProductModel;
 use App\Service\SelectProductCategoryService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -26,33 +28,44 @@ class FrontController extends AbstractController
     public function getRecommendedProductsAction($city, Client $client, SelectProductCategoryService $productCategoryService, ProductModel $productModel, CacheInterface $accessoryRecomendationCache): JsonResponse
     {
         $response = $accessoryRecomendationCache->get($city, function (ItemInterface $item) use ($city, $client, $productCategoryService, $productModel) {
-            $item->expiresAfter(500);
+            $item->expiresAfter(1);
+            //todo change expiration back to 500
             $responseFromClient = $client->fetchDataFromClient($city);
             $selectedCityForecast = json_decode($responseFromClient, true);
             $selectedProductTypes = $productCategoryService->selectProductType($selectedCityForecast['forecastTimestamps']);
             $responseDataArray = [];
             foreach ($selectedProductTypes as $productType) {
                 $selectedProducts = $productModel->findProductsByCategory($productType['weatherForecast']);
-                $data = [
-                    'Weather_forecast' => $productType['weatherForecast'],
-                    'date' => $productType['date'],
-                    'products' => $selectedProducts
-                ];
+                if (!$selectedProducts) {
+                    $selectedProducts = [
+                        'error' => 'There are no Items in this category'
+                    ];
+                }
+                $data = $this->createDaysResponseData($productType, $selectedProducts);
+
                 array_push($responseDataArray, $data);
             }
-
+//            dump($responseDataArray);
             $response = [
                 'city' => ucfirst($city),
                 'recommendations' => $responseDataArray,
                 'additional information' => 'Weather for this information was taken from LHMT API. For more information: https://api.meteo.lt/'
             ];
-            dump("not cached");
             return $response;
         });
 
         return $this->json($response, Response::HTTP_OK, [], [
             ObjectNormalizer::IGNORED_ATTRIBUTES => ['id', 'productCategory']
         ]);
+    }
+
+    private function createDaysResponseData(array $productType, array $products): array
+    {
+        return [
+            'Weather_forecast' => $productType['weatherForecast'],
+            'date' => $productType['date'],
+            'products' => $products
+        ];
     }
 }
 

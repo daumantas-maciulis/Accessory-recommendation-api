@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace App\Client\LHMT;
 
+use App\Exception\ExternalApiException;
 use GuzzleHttp\Client as Guzzle;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class Client
 {
