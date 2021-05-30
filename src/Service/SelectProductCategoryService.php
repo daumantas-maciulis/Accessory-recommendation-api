@@ -21,18 +21,15 @@ class SelectProductCategoryService
 
     public function selectProductType(array $weatherForecast)
     {
-        $todaysDate = new \DateTime('today');
-        $tomorrowsDate = new \DateTime('tomorrow');
-        $dayAfterDate = new \DateTime('tomorrow');
-        $dayAfterDate->add(new \DateInterval('P1D'));
-        $thirdDay = new \DateTime('tomorrow');
-        $thirdDay->add(new \DateInterval('P2D'));
+        $todaysDate = new \DateTimeImmutable('today');
+        $tomorrowsDate = $todaysDate->add(new \DateInterval('P1D'));
+        $dayAfterDate = $todaysDate->add(new \DateInterval('P2D'));
+        $thirdDay = $todaysDate->add(new \DateInterval('P3D'));
 
         $weatherForecast = (object)$weatherForecast;
         foreach ($weatherForecast as $weatherForestHourly) {
             $weatherForestHourly = (object)$weatherForestHourly;
             $weatherForecastDate = new \DateTime($weatherForestHourly->forecastTimeUtc);
-
             if ($weatherForecastDate < $tomorrowsDate) {
                 $todaysWeatherConditions[] = $weatherForestHourly->conditionCode;
             }
@@ -55,7 +52,6 @@ class SelectProductCategoryService
             'date' => $dayAfterDate->format('Y-m-d'),
             'weatherForecast' => $this->selectAccessoryType($dayAfterTomorrowWeather)
         ];
-
         return $accessoryGroup;
     }
 
@@ -83,5 +79,5 @@ class SelectProductCategoryService
             return "fog";
         }
     }
-
 }
+

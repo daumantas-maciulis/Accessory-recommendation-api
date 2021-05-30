@@ -1,10 +1,8 @@
 <?php
-
+declare(strict_types=1);
 
 namespace App\EventListener;
 
-
-use App\Exception\ExternalApiException;
 use GuzzleHttp\Exception\ClientException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,8 +21,6 @@ class ExceptionListener
 
     private function getExceptionResponse(\Throwable $exception)
     {
-        //todo delete DUMP
-        dump($exception);
         switch ($exception) {
             case($exception instanceof NotFoundHttpException):
                 return $this->handleNotFoundHttpException();
@@ -52,9 +48,4 @@ class ExceptionListener
 
         return new JsonResponse($response, Response::HTTP_INTERNAL_SERVER_ERROR);
     }
-
-
-
-
-
 }

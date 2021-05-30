@@ -4,13 +4,10 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Client\LHMT\Client;
-use App\Entity\Product;
-use App\Exception\ExternalApiException;
 use App\Model\ProductModel;
 use App\Service\SelectProductCategoryService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
@@ -30,8 +27,7 @@ class FrontController extends AbstractController
         $response = $accessoryRecomendationCache->get($city, function (ItemInterface $item) use ($city, $client, $productCategoryService, $productModel) {
             $item->expiresAfter(1);
             //todo change expiration back to 500
-            $responseFromClient = $client->fetchDataFromClient($city);
-            $selectedCityForecast = json_decode($responseFromClient, true);
+            $selectedCityForecast = json_decode($client->fetchDataFromClient($city), true);
             $selectedProductTypes = $productCategoryService->selectProductType($selectedCityForecast['forecastTimestamps']);
             $responseDataArray = [];
             foreach ($selectedProductTypes as $productType) {
@@ -45,13 +41,8 @@ class FrontController extends AbstractController
 
                 array_push($responseDataArray, $data);
             }
-//            dump($responseDataArray);
-            $response = [
-                'city' => ucfirst($city),
-                'recommendations' => $responseDataArray,
-                'additional information' => 'Weather for this information was taken from LHMT API. For more information: https://api.meteo.lt/'
-            ];
-            return $response;
+
+            return $this->createFullResponseArray($city, $responseDataArray);
         });
 
         return $this->json($response, Response::HTTP_OK, [], [
@@ -65,6 +56,15 @@ class FrontController extends AbstractController
             'Weather_forecast' => $productType['weatherForecast'],
             'date' => $productType['date'],
             'products' => $products
+        ];
+    }
+
+    private function createFullResponseArray(string $city, array $responseDataArray): array
+    {
+        return [
+            'city' => ucfirst($city),
+            'recommendations' => $responseDataArray,
+            'additional information' => 'Weather for this information was taken from LHMT API. For more information: https://api.meteo.lt/'
         ];
     }
 }

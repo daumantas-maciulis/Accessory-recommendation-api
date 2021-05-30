@@ -3,10 +3,8 @@ declare(strict_types=1);
 
 namespace App\Client\LHMT;
 
-use App\Exception\ExternalApiException;
 use GuzzleHttp\Client as Guzzle;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class Client
 {
@@ -14,6 +12,7 @@ class Client
     {
         $client = new Guzzle([
             'base_uri' => 'https://api.meteo.lt',
+            'connect_timeout' => 4
         ]);
 
         $requestUrl = sprintf("/v1/places/%s/forecasts/long-term", $cityName);
@@ -22,3 +21,4 @@ class Client
         return $responseFromClient->getBody()->getContents();
     }
 }
+
